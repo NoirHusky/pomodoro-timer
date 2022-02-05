@@ -1,5 +1,6 @@
-# Pomodoro timer in C language - Version 1.0
-Made by Maxime B. - http://maxime-brgt.me
+# Pomodoro timer in C language - Version 1.1
+Version 1.0 - Made by Maxime B. - http://maxime-brgt.me
+Version 1.1 - Cleanup up by NoirHusky
 # Usage
 To compile it :
 ```

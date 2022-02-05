@@ -1,5 +1,5 @@
 /*
-** main.c for pomodoro timer in /home/brugue_m/Perso/projets_divers/pomodoro_c
+** main.c for pomodoro timer
 ** 
 ** Made by Maxime B. (website : maxime-brgt.me)
 ** 
@@ -7,89 +7,87 @@
 ** Last update Mon Jul 13 17:53:22 2015 Maxime B.
 */
 
-#include	<unistd.h>
+/*
+ * Last update Saturday 05 February 2022 by NoirHusky
+ */
+// TODO: give the user a gracefull way to exit any time. Preferably, add a 'q' option to the yes/no question
 #include	<stdio.h>
 #include	<stdbool.h>
-#include	<signal.h>
 #include	<stdlib.h>
-#include	"pomodoro.h"
+#include    <string.h>
+#include    <unistd.h>
 
-void		sig_h(int sig)
+#ifndef TEST
+    const int LENGTH_SHORT_BREAK = 5 * 60;
+    const int LENGTH_LONG_BREAK  = 15 * 60;
+    const int NUM_POMODOROS_BFB  = 4;
+    const int LENGTH_POMODORO    = 25 * 60;
+#else
+    const int LENGTH_SHORT_BREAK = 3;
+    const int LENGTH_LONG_BREAK  = 5;
+    const int NUM_POMODOROS_BFB  = 4;
+    const int LENGTH_POMODORO    = 10;
+#endif
+
+const char* LONG_BREAK_MSG  = "Good job, long break time !";
+const char* SHORT_BREAK_MSG = "Break time !";
+const char*     WORK_MSG    = "Time to work!";
+
+bool bRunning = true;
+
+void __bye()
 {
-  (void)sig;
-  printf("\033[0m\nGood Bye !\n");
+  printf("\nGood Bye !\n");
   exit(0);
 }
-void		end_check(bool *is_break, int *count_p, bool *is_lb)
-{
-  if ((*is_break))
-    *is_break = false;
-  else if (!(*is_break) && (*count_p) % NBR_POM_LONG_BREAK == 0)
-    {
-      printf("\033[1;44mGood job, long break time !\n");
-      (*is_break) = true;
-      (*is_lb) = true;
-      (*count_p)++;
+
+void POM_countdown(const char* msg, int secs) {
+    system("clear");
+    printf("%s\n\n", msg);
+
+    while ( secs >= 0 ) {
+        int min = (secs / 60) % 60; 
+        int sec = (secs % 60);
+
+        printf("\rTime remaining: %02d:%02d...", min, sec);
+
+        fflush(stdout);
+        sleep(1);
+        secs -= 1;
     }
-  else
-    {
-      printf("\033[1;42mBreak time !\n");
-      (*is_break) = true;
-      (*is_lb) = false;
-      (*count_p)++;
-    }
+    putchar('\n');
 }
 
-void		main_loop(int *min, int *sec)
-{
-  while ((*min) >= 0)
-    {
-      while ((*min) >= 0 && (*sec) >= 0)
-	{
-	  printf("Il reste ");
-	  if ((*min) < 10)
-	    printf("0");
-	  printf("%d:", (*min));
-	  if ((*sec) < 10)
-	    printf("0");
-	  printf("%d...", (*sec));
-	  fflush(stdout);
-	  putchar('\r');
-	  sleep(1);
-	  (*sec)--;
-	}
-      *sec = 59;
-      (*min)--;
-    }
+bool pom_yes_no_question(char* question) {
+    puts(question);
+    char answer = 0;
+    do {
+       answer = getchar(); 
+       if ( answer == 'n' ) return false;
+    } while ( answer != 'y' && answer != 'n' );
+    return true;
 }
 
-int		main(int ac, char **av)
+int	main()
 {
-  int		min;
-  int		sec = 59;
-  int		count_p = 1;
-  bool		is_break = false;
-  bool		is_lb = false;
+    int nums_poms = 1;
+    while (bRunning) {
+        POM_countdown(WORK_MSG, LENGTH_POMODORO);
+        nums_poms++;
 
-  (void)ac;
-  (void)av;
-  while (true)
-    {
-      signal(SIGINT, sig_h);
-      if (!is_break)
-	printf("\033[1;41mWorking ! Pomodoro n°%d !\n", count_p);
-      if (is_break && is_lb)
-	min = LENGTH_LONG_BREAK - 1;
-      else if (is_break)
-	min = LENGTH_SHORT_BREAK - 1;
-      else
-	min = LENGTH_POMODORO - 1;
-      main_loop(&min, &sec);
-      putchar('\n');
-      printf("\033[0m");
-      fflush(stdout);
-      system("beep -l 100 -f 400 -D 200 -n -l 100 -f 400");
-      end_check(&is_break, &count_p, &is_lb);
+        bool yes = pom_yes_no_question("Do you want to take a break? (y/n) ");
+        if ( ! yes ) continue; 
+        if ( nums_poms % LENGTH_LONG_BREAK == 0 ) { 
+            POM_countdown(LONG_BREAK_MSG, LENGTH_LONG_BREAK);
+        } else {
+            POM_countdown(SHORT_BREAK_MSG, LENGTH_SHORT_BREAK);
+        }
+        yes = pom_yes_no_question("Break has ended!\nDo you want to go back to work? (y/n) ");
+        if ( ! yes ) bRunning = false; 
     }
-  return (EXIT_SUCCESS);
+#ifdef BEEP
+    system("beep -l 100 -f 400 -D 200 -n -l 100 -f 400");
+#endif
+    __bye();
+    return (EXIT_SUCCESS);
 }

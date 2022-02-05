@@ -9,7 +9,7 @@
 
 CC	=	gcc
 
-CFLAGS	+=	-Wall -Wextra -I./include/
+CFLAGS	+=	-Wall -Wextra #-I./include/
 
 NAME	=	pomodoro-timer
 
@@ -17,11 +17,17 @@ SRC	=	src/pomodoro.c
 
 OBJ	=	$(SRC:.c=.o)
 
-all:		$(NAME)
+all:		$(NAME) beep test
 
 $(NAME):	$(OBJ)
 		$(CC) -o $(NAME) $(OBJ) $(CFLAGS)
-		@echo "\033[1mCompilation done ! Check the header in ./include to modify parameters !\033[0m"
+
+test: $(OBJ)
+		$(CC) -o $(NAME) $(OBJ) $(CFLAGS) -DTEST
+
+beep: $(OBJ)
+		$(CC) -o $(NAME) $(OBJ) $(CFLAGS) -DBEEP
+
 
 clean:
 		rm -f $(OBJS)
